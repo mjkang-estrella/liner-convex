@@ -1,6 +1,6 @@
 import { defineApp } from "convex/server";
 import { v } from "convex/values";
-import liner from "@liner/convex-liner/convex.config";
+import liner from "liner-convex/convex.config";
 
 const app = defineApp({
   env: {
@@ -16,4 +16,3 @@ app.use(liner, {
 });
 
 export default app;
-

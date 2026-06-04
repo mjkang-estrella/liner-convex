@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { action } from "./_generated/server.js";
 import { components } from "./_generated/api.js";
-import { LinerClient } from "@liner/convex-liner";
+import { LinerClient } from "liner-convex";
 
 const liner = new LinerClient(components.liner);
 
@@ -137,4 +137,3 @@ export const deepResearchPro = action({
     });
   },
 });
-

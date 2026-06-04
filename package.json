@@ -1,6 +1,6 @@
 {
-  "name": "@liner/convex-liner",
-  "version": "0.1.0",
+  "name": "liner-convex",
+  "version": "0.1.1",
   "description": "Convex component for Liner search, quick answers, AI Search, and Deep Research",
   "type": "module",
   "main": "./dist/client/index.js",
@@ -31,7 +31,10 @@
       "default": "./dist/test.js"
     }
   },
-  "files": ["dist", "convex.config.ts"],
+  "files": [
+    "dist",
+    "convex.config.ts"
+  ],
   "scripts": {
     "build": "npm run build:esm",
     "build:esm": "tsc --project ./tsconfig.build.json",
@@ -63,11 +66,11 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/liner/convex-liner.git"
+    "url": "git+https://github.com/mjkang-estrella/liner-convex.git"
   },
-  "homepage": "https://github.com/liner/convex-liner#readme",
+  "homepage": "https://github.com/mjkang-estrella/liner-convex#readme",
   "bugs": {
-    "url": "https://github.com/liner/convex-liner/issues"
+    "url": "https://github.com/mjkang-estrella/liner-convex/issues"
   },
   "publishConfig": {
     "access": "public"
@@ -92,4 +95,3 @@
     "vitest": "4.1.4"
   }
 }
-

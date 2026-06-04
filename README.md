@@ -7,7 +7,7 @@ Use Liner's search, quick answer, AI Search, and Deep Research APIs from Convex 
 ### 1. Install the Component
 
 ```bash
-npm install @liner/convex-liner
+npm install liner-convex
 ```
 
 ### 2. Configure Convex
@@ -17,7 +17,7 @@ Add the component to your `convex/convex.config.ts`:
 ```typescript
 import { defineApp } from "convex/server";
 import { v } from "convex/values";
-import liner from "@liner/convex-liner/convex.config";
+import liner from "liner-convex/convex.config";
 
 const app = defineApp({
   env: {
@@ -54,7 +54,7 @@ npx convex env set LINER_API_KEY <your-key>
 ```typescript
 import { action } from "./_generated/server";
 import { components } from "./_generated/api";
-import { LinerClient } from "@liner/convex-liner";
+import { LinerClient } from "liner-convex";
 
 const liner = new LinerClient(components.liner);
 
@@ -239,4 +239,3 @@ npm run dev
 ```
 
 See [example/README.md](./example/README.md) for a walkthrough.
-

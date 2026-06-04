@@ -1,6 +1,6 @@
 # convex-liner example
 
-Complete example showing how to use `@liner/convex-liner` from a Convex app.
+Complete example showing how to use `liner-convex` from a Convex app.
 
 ## Prerequisites
 
@@ -104,4 +104,3 @@ npx convex run example:deepResearchPro '{
   "question": "Write a cited research brief on AI search API price and accuracy tradeoffs"
 }'
 ```
-

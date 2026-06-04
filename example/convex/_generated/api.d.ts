@@ -37,6 +37,5 @@ export declare const internal: FilterApi<
 >;
 
 export declare const components: {
-  liner: import("@liner/convex-liner/_generated/component.js").ComponentApi<"liner">;
+  liner: import("liner-convex/_generated/component.js").ComponentApi<"liner">;
 };
-

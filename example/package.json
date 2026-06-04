@@ -8,7 +8,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@liner/convex-liner": "file:..",
+    "liner-convex": "file:..",
     "convex": "^1.39.1"
   },
   "devDependencies": {
@@ -16,4 +16,3 @@
     "typescript": "6.0.3"
   }
 }
-

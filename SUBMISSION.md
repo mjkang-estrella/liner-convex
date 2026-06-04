@@ -5,11 +5,11 @@ Use these answers for https://www.convex.dev/components/submit.
 | Field | Answer |
 | --- | --- |
 | Component Name | Liner |
-| npm Package URL | https://www.npmjs.com/package/@liner/convex-liner |
-| GitHub Repository URL | https://github.com/liner/convex-liner |
+| npm Package URL | https://www.npmjs.com/package/liner-convex |
+| GitHub Repository URL | https://github.com/mjkang-estrella/liner-convex |
 | Category | ai |
 | Short Description | Use Liner's search, quick answer, AI Search, and Deep Research APIs from Convex actions with your API key kept in Convex env. |
-| Demo URL / Example App | https://github.com/liner/convex-liner/tree/main/example |
+| Demo URL / Example App | https://github.com/mjkang-estrella/liner-convex/tree/main/example |
 | Tags | liner, ai, search, web-search, scholar-search, quick-answer, deep-research, retrieval, citations, rag |
 | Optional Video URL | Leave blank. |
 | Optional Logo/Thumbnail | Upload official Liner brand asset if available; otherwise leave blank. |
@@ -31,4 +31,3 @@ Install the npm package, register the component in `convex/convex.config.ts`, pa
 - Check: I have read the FAQ.
 - Check: The component meets the authoring guidelines.
 - Check: I have permission to submit this component for others to use and share.
-
