@@ -1,0 +1,95 @@
+{
+  "name": "@liner/convex-liner",
+  "version": "0.1.0",
+  "description": "Convex component for Liner search, quick answers, AI Search, and Deep Research",
+  "type": "module",
+  "main": "./dist/client/index.js",
+  "types": "./dist/client/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/client/index.d.ts",
+      "default": "./dist/client/index.js"
+    },
+    "./convex.config": {
+      "types": "./dist/component/convex.config.d.ts",
+      "default": "./dist/component/convex.config.js"
+    },
+    "./convex.config.js": {
+      "types": "./dist/component/convex.config.d.ts",
+      "default": "./dist/component/convex.config.js"
+    },
+    "./_generated/component": {
+      "types": "./dist/component/_generated/component.d.ts",
+      "default": "./dist/component/_generated/component.js"
+    },
+    "./_generated/component.js": {
+      "types": "./dist/component/_generated/component.d.ts",
+      "default": "./dist/component/_generated/component.js"
+    },
+    "./test": {
+      "types": "./dist/test.d.ts",
+      "default": "./dist/test.js"
+    }
+  },
+  "files": ["dist", "convex.config.ts"],
+  "scripts": {
+    "build": "npm run build:esm",
+    "build:esm": "tsc --project ./tsconfig.build.json",
+    "build:codegen": "npx convex codegen --component-dir ./src/component && npm run build:esm",
+    "build:clean": "rm -rf dist *.tsbuildinfo && npm run build:codegen",
+    "dev": "npm-run-all --parallel dev:build dev:backend",
+    "dev:backend": "cd example && npx convex dev --typecheck-components",
+    "dev:build": "chokidar 'src/**/*.ts' 'tsconfig*.json' --initial -i '**/*.test.ts' -c 'npm run build:codegen'",
+    "typecheck": "tsc --noEmit && cd example && tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run --typecheck",
+    "test:watch": "vitest --typecheck --clearScreen false",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "convex",
+    "component",
+    "liner",
+    "ai",
+    "search",
+    "web-search",
+    "scholar-search",
+    "quick-answer",
+    "deep-research",
+    "retrieval",
+    "citations",
+    "rag"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/liner/convex-liner.git"
+  },
+  "homepage": "https://github.com/liner/convex-liner#readme",
+  "bugs": {
+    "url": "https://github.com/liner/convex-liner/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "convex": "^1.39.1"
+  },
+  "devDependencies": {
+    "@convex-dev/eslint-plugin": "^1.2.2",
+    "@edge-runtime/vm": "^5.0.0",
+    "@eslint/js": "9.39.4",
+    "@types/node": "^24.12.2",
+    "chokidar-cli": "3.0.0",
+    "convex": "1.39.1",
+    "convex-test": "0.0.52",
+    "eslint": "9.39.4",
+    "globals": "^17.5.0",
+    "npm-run-all": "^4.1.5",
+    "prettier": "3.8.3",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.58.2",
+    "vitest": "4.1.4"
+  }
+}
+

@@ -1,0 +1,19 @@
+{
+  "name": "convex-liner-example",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npx convex dev",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@liner/convex-liner": "file:..",
+    "convex": "^1.39.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.12.2",
+    "typescript": "6.0.3"
+  }
+}
+
