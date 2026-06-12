@@ -15,68 +15,13 @@ type Message = {
   content: string;
 };
 
-type WebSearchArgs = {
+type SearchArgs = {
   query: string;
-  country_code?: string;
-  lang?: string;
-  date_range?: "past_day" | "past_week" | "past_month" | "past_year";
-  max_results?: number;
-  request_id?: string;
+  limit?: number;
 };
 
-type ScholarSearchArgs = {
-  query: string;
-  lang?: string;
-  date_range?: "past_day" | "past_week" | "past_month" | "past_year";
-  max_results?: number;
-  request_id?: string;
-};
-
-type SearchResult = {
-  title: string;
-  url: string;
-  hostname?: string;
-  favicon_url?: string | null;
-  description?: string;
-  date?: string | null;
-  citation_count?: number;
-  authors?: Array<string>;
-  journal?: string;
-};
-
-type SearchResponse = {
-  request_id?: string;
-  results: Array<SearchResult>;
-  total_count?: number;
-};
-
-type SseArgs = {
+type AgentArgs = {
   messages: Array<Message>;
-  request_id?: string;
-  include_events?: boolean;
-};
-
-type AiSearchArgs = SseArgs & {
-  model?: string | null;
-  lang?: string;
-  mode?: "general" | "scholar";
-};
-
-type DeepResearchArgs = SseArgs & {
-  lang?: string;
-};
-
-type SseResponse = {
-  text: string;
-  reasoning: string;
-  references: Array<any>;
-  referenceChunks: Array<any>;
-  tasks: Array<any>;
-  searchSteps: Array<any>;
-  metadata?: any;
-  message_id?: string;
-  event_counts: any;
-  raw_events?: Array<any>;
 };
 
 /**
@@ -85,55 +30,34 @@ type SseResponse = {
 export type ComponentApi<Name extends string | undefined = string | undefined> =
   {
     lib: {
-      aiSearch: FunctionReference<
+      deepResearchAgent: FunctionReference<
         "action",
         "internal",
-        AiSearchArgs,
-        SseResponse,
+        AgentArgs,
+        any,
         Name
       >;
-      aiSearchPro: FunctionReference<
+      quickAnswerAgent: FunctionReference<
         "action",
         "internal",
-        AiSearchArgs,
-        SseResponse,
+        AgentArgs,
+        any,
         Name
       >;
-      deepResearch: FunctionReference<
+      searchAgent: FunctionReference<
         "action",
         "internal",
-        DeepResearchArgs,
-        SseResponse,
+        AgentArgs,
+        any,
         Name
       >;
-      deepResearchPro: FunctionReference<
+      searchScholar: FunctionReference<
         "action",
         "internal",
-        DeepResearchArgs,
-        SseResponse,
+        SearchArgs,
+        any,
         Name
       >;
-      quickAnswer: FunctionReference<
-        "action",
-        "internal",
-        SseArgs,
-        SseResponse,
-        Name
-      >;
-      scholarSearch: FunctionReference<
-        "action",
-        "internal",
-        ScholarSearchArgs,
-        SearchResponse,
-        Name
-      >;
-      webSearch: FunctionReference<
-        "action",
-        "internal",
-        WebSearchArgs,
-        SearchResponse,
-        Name
-      >;
+      searchWeb: FunctionReference<"action", "internal", SearchArgs, any, Name>;
     };
   };
-

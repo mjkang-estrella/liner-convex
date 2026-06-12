@@ -8,7 +8,7 @@ Use these answers for https://www.convex.dev/components/submit.
 | npm Package URL | https://www.npmjs.com/package/liner-convex |
 | GitHub Repository URL | https://github.com/mjkang-estrella/liner-convex |
 | Category | ai |
-| Short Description | Use Liner's search, quick answer, AI Search, and Deep Research APIs from Convex actions with your API key kept in Convex env. |
+| Short Description | Use Liner's OAuth-backed MCP search and research tools from Convex actions with the access token kept in Convex env. |
 | Demo URL / Example App | https://github.com/mjkang-estrella/liner-convex/tree/main/example |
 | Tags | liner, ai, search, web-search, scholar-search, quick-answer, deep-research, retrieval, citations, rag |
 | Optional Video URL | Leave blank. |
@@ -16,7 +16,7 @@ Use these answers for https://www.convex.dev/components/submit.
 
 ## Description
 
-Liner Convex wraps Liner's AI-powered search APIs as a reusable Convex Component. Convex actions can call web search, scholar search, quick answers, AI Search, AI Search Pro, Deep Research, and Deep Research Pro while keeping LINER_API_KEY in Convex environment configuration. Streaming Liner endpoints are parsed into typed, citation-aware results for use in Convex apps.
+Liner Convex wraps Liner's OAuth-backed MCP tools as a reusable Convex Component. Convex actions can call web search, scholar search, Quick Answer Agent, Search Agent, and Deep Research Agent while keeping `LINER_MCP_ACCESS_TOKEN` in Convex environment configuration. MCP tool responses are normalized into JavaScript objects for use in Convex apps.
 
 ## Use Cases
 
@@ -24,7 +24,7 @@ Build source-backed chat and copilot answers, power RAG pipelines with fresh web
 
 ## How It Works
 
-Install the npm package, register the component in `convex/convex.config.ts`, pass `LINER_API_KEY` through Convex env, instantiate `LinerClient` with `components.liner`, and call its methods from Convex actions. The component performs server-side HTTPS requests to Liner, parses JSON or SSE responses, and returns typed results to the calling action.
+Install the npm package, register the component in `convex/convex.config.ts`, pass `LINER_MCP_ACCESS_TOKEN` through Convex env, instantiate `LinerClient` with `components.liner`, and call its methods from Convex actions. The component performs server-side MCP `tools/call` requests to Liner, parses MCP text content, and returns normalized results to the calling action.
 
 ## Required Confirmations
 

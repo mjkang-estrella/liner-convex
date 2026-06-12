@@ -1,476 +1,225 @@
-import { v, type Infer } from "convex/values";
+import { v } from "convex/values";
 import { action, env } from "./_generated/server.js";
 
-const LINER_BASE_URL = "https://platform.liner.com/api/v1";
-
-const dateRangeValidator = v.union(
-  v.literal("past_day"),
-  v.literal("past_week"),
-  v.literal("past_month"),
-  v.literal("past_year"),
-);
+const LINER_MCP_URL = "https://platform.liner.com/api/v1/mcp";
 
 const messageValidator = v.object({
   role: v.union(v.literal("user"), v.literal("assistant")),
   content: v.string(),
 });
 
-const webSearchArgsValidator = {
+const searchArgsValidator = {
   query: v.string(),
-  country_code: v.optional(v.string()),
-  lang: v.optional(v.string()),
-  date_range: v.optional(dateRangeValidator),
-  max_results: v.optional(v.number()),
-  request_id: v.optional(v.string()),
+  limit: v.optional(v.number()),
 };
 
-const scholarSearchArgsValidator = {
-  query: v.string(),
-  lang: v.optional(v.string()),
-  date_range: v.optional(dateRangeValidator),
-  max_results: v.optional(v.number()),
-  request_id: v.optional(v.string()),
-};
-
-const baseSseArgsValidator = {
+const agentArgsValidator = {
   messages: v.array(messageValidator),
-  request_id: v.optional(v.string()),
-  include_events: v.optional(v.boolean()),
 };
-
-const aiSearchArgsValidator = {
-  ...baseSseArgsValidator,
-  model: v.optional(v.union(v.string(), v.null())),
-  lang: v.optional(v.string()),
-  mode: v.optional(v.union(v.literal("general"), v.literal("scholar"))),
-};
-
-const deepResearchArgsValidator = {
-  ...baseSseArgsValidator,
-  lang: v.optional(v.string()),
-};
-
-const searchResultValidator = v.object({
-  title: v.string(),
-  url: v.string(),
-  hostname: v.optional(v.string()),
-  favicon_url: v.optional(v.union(v.string(), v.null())),
-  description: v.optional(v.string()),
-  date: v.optional(v.union(v.string(), v.null())),
-  citation_count: v.optional(v.number()),
-  authors: v.optional(v.array(v.string())),
-  journal: v.optional(v.string()),
-});
-
-const searchReturnValidator = v.object({
-  request_id: v.optional(v.string()),
-  results: v.array(searchResultValidator),
-  total_count: v.optional(v.number()),
-});
-
-const sseReturnValidator = v.object({
-  text: v.string(),
-  reasoning: v.string(),
-  references: v.array(v.any()),
-  referenceChunks: v.array(v.any()),
-  tasks: v.array(v.any()),
-  searchSteps: v.array(v.any()),
-  metadata: v.optional(v.any()),
-  message_id: v.optional(v.string()),
-  event_counts: v.any(),
-  raw_events: v.optional(v.array(v.any())),
-});
-
-type SearchReturn = Infer<typeof searchReturnValidator>;
-type SseReturn = Infer<typeof sseReturnValidator>;
-
-type LinerEndpoint =
-  | "/search/web"
-  | "/search/scholar"
-  | "/quick-answer"
-  | "/ai-search"
-  | "/ai-search-pro"
-  | "/deep-research"
-  | "/deep-research-pro";
 
 type Message = {
   role: "user" | "assistant";
   content: string;
 };
 
-type WebSearchArgs = {
+type SearchArgs = {
   query: string;
-  country_code?: string;
-  lang?: string;
-  date_range?: "past_day" | "past_week" | "past_month" | "past_year";
-  max_results?: number;
-  request_id?: string;
+  limit?: number;
 };
 
-type ScholarSearchArgs = {
-  query: string;
-  lang?: string;
-  date_range?: "past_day" | "past_week" | "past_month" | "past_year";
-  max_results?: number;
-  request_id?: string;
-};
-
-type BaseSseArgs = {
+type AgentArgs = {
   messages: Message[];
-  request_id?: string;
-  include_events?: boolean;
 };
 
-type AiSearchArgs = BaseSseArgs & {
-  model?: string | null;
-  lang?: string;
-  mode?: "general" | "scholar";
+type McpToolName =
+  | "search_web"
+  | "search_scholar"
+  | "quick_answer_agent"
+  | "search_agent"
+  | "deep_research_agent";
+
+type JsonRpcEnvelope = {
+  result?: unknown;
+  error?: unknown;
 };
 
-type DeepResearchArgs = BaseSseArgs & {
-  lang?: string;
+type McpToolResult = {
+  content?: unknown;
+  isError?: boolean;
 };
 
-type RawSseEvent = Record<string, unknown> & {
-  type?: string;
-  data?: unknown;
-  delta?: string;
-  message_id?: string;
-  message_metadata?: unknown;
-};
-
-type SseAggregate = {
-  text: string;
-  reasoning: string;
-  references: unknown[];
-  referenceChunks: unknown[];
-  tasks: unknown[];
-  searchSteps: unknown[];
-  metadata?: unknown;
-  message_id?: string;
-  event_counts: Record<string, number>;
-  raw_events?: RawSseEvent[];
-};
-
-function buildSearchBody(args: WebSearchArgs | ScholarSearchArgs) {
-  return { ...args };
-}
-
-function buildSseBody<TArgs extends { include_events?: boolean }>(
-  args: TArgs,
-) {
-  const { include_events: _includeEvents, ...body } = args;
-  return body;
-}
-
-function buildJsonHeaders(apiKey: string) {
+function buildMcpHeaders(accessToken: string) {
   return {
+    Authorization: `Bearer ${accessToken}`,
     "Content-Type": "application/json",
-    "x-api-key": apiKey,
+    Accept: "application/json, text/event-stream",
   };
 }
 
-function buildSseHeaders(apiKey: string) {
+function buildToolCallBody(toolName: McpToolName, args: unknown) {
   return {
-    ...buildJsonHeaders(apiKey),
-    Accept: "text/event-stream",
+    jsonrpc: "2.0",
+    id: 1,
+    method: "tools/call",
+    params: {
+      name: toolName,
+      arguments: args,
+    },
   };
 }
 
-async function callLinerJson(
-  endpoint: "/search/web" | "/search/scholar",
-  body: unknown,
-) {
-  const response = await fetch(`${LINER_BASE_URL}${endpoint}`, {
+async function callMcpTool(toolName: McpToolName, args: unknown) {
+  const response = await fetch(LINER_MCP_URL, {
     method: "POST",
-    headers: new Headers(buildJsonHeaders(getApiKey())),
-    body: JSON.stringify(body),
+    headers: new Headers(buildMcpHeaders(getAccessToken())),
+    body: JSON.stringify(buildToolCallBody(toolName, args)),
   });
 
   const text = await response.text();
-  const parsed = text.length > 0 ? tryParseJson(text) : null;
+  const envelope = parseMcpEnvelope(text, response.headers.get("content-type"));
+
   if (!response.ok) {
     throw new Error(
-      `Liner ${endpoint} failed (${response.status}): ${extractErrorMessage(
-        parsed,
+      `Liner MCP ${toolName} failed (${response.status}): ${extractErrorMessage(
+        envelope?.error,
         text,
         response.statusText,
       )}`.trim(),
     );
   }
 
-  return parsed;
-}
-
-async function callLinerSse(
-  endpoint:
-    | "/quick-answer"
-    | "/ai-search"
-    | "/ai-search-pro"
-    | "/deep-research"
-    | "/deep-research-pro",
-  args: { include_events?: boolean },
-) {
-  const response = await fetch(`${LINER_BASE_URL}${endpoint}`, {
-    method: "POST",
-    headers: new Headers(buildSseHeaders(getApiKey())),
-    body: JSON.stringify(buildSseBody(args)),
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    const parsed = text.length > 0 ? tryParseJson(text) : null;
+  if (envelope?.error !== undefined) {
     throw new Error(
-      `Liner ${endpoint} failed (${response.status}): ${extractErrorMessage(
-        parsed,
+      `Liner MCP ${toolName} failed: ${extractErrorMessage(
+        envelope.error,
         text,
-        response.statusText,
+        "MCP error",
       )}`.trim(),
     );
   }
 
-  if (!response.body) {
-    throw new Error(`Liner ${endpoint} returned an empty stream.`);
-  }
-
-  return await parseSseStream(response.body, endpoint, args.include_events);
+  return normalizeToolResult(toolName, envelope?.result);
 }
 
-async function parseSseStream(
-  stream: ReadableStream<Uint8Array>,
-  endpoint: LinerEndpoint,
-  includeEvents = false,
-): Promise<SseAggregate> {
-  const reader = stream.getReader();
-  const decoder = new TextDecoder();
-  const state = createSseState(includeEvents);
-  let buffer = "";
-  let done = false;
-
-  try {
-    while (!done) {
-      const chunk = await reader.read();
-      if (chunk.done) {
-        break;
-      }
-      buffer += decoder.decode(chunk.value, { stream: true });
-      const processed = processBufferedLines(buffer, state, endpoint);
-      buffer = processed.remainder;
-      done = processed.done;
-    }
-
-    buffer += decoder.decode();
-    if (buffer.length > 0 && !done) {
-      const processed = processBufferedLines(`${buffer}\n`, state, endpoint);
-      done = processed.done;
-    }
-  } finally {
-    if (done) {
-      await reader.cancel();
-    } else {
-      reader.releaseLock();
-    }
-  }
-
-  return state;
-}
-
-async function parseSseText(
+function parseMcpEnvelope(
   text: string,
-  endpoint: LinerEndpoint = "/ai-search",
-  includeEvents = false,
-) {
-  const stream = new ReadableStream<Uint8Array>({
-    start(controller) {
-      controller.enqueue(new TextEncoder().encode(text));
-      controller.close();
-    },
-  });
-  return await parseSseStream(stream, endpoint, includeEvents);
+  contentType: string | null,
+): JsonRpcEnvelope | undefined {
+  if (text.length === 0) {
+    return undefined;
+  }
+
+  if (contentType?.includes("text/event-stream")) {
+    return parseMcpSseEnvelope(text);
+  }
+
+  return tryParseJson(text) as JsonRpcEnvelope;
 }
 
-function createSseState(includeEvents: boolean): SseAggregate {
+function parseMcpSseEnvelope(text: string): JsonRpcEnvelope | undefined {
+  let envelope: JsonRpcEnvelope | undefined;
+  for (const rawLine of text.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line.startsWith("data:")) {
+      continue;
+    }
+
+    const payload = line.slice("data:".length).trim();
+    if (!payload || payload === "[DONE]") {
+      continue;
+    }
+
+    envelope = tryParseJson(payload) as JsonRpcEnvelope;
+  }
+  return envelope;
+}
+
+function parseTextContent(content: unknown) {
+  if (!Array.isArray(content)) {
+    return [];
+  }
+
+  return content
+    .filter((item) => isRecord(item) && item.type === "text" && item.text)
+    .map((item) => {
+      const text = String((item as { text: unknown }).text);
+      try {
+        return JSON.parse(text) as unknown;
+      } catch {
+        return text;
+      }
+    });
+}
+
+function normalizeEvents(events: unknown[]) {
+  const text = events
+    .filter((event) => isRecord(event) && event.type === "text-delta")
+    .map((event) => String((event as { delta?: unknown }).delta ?? ""))
+    .join("");
+  const start = events.find(
+    (event) => isRecord(event) && event.type === "start",
+  );
+  const metadata =
+    isRecord(start) && isRecord(start.message_metadata)
+      ? start.message_metadata
+      : {};
+  const referenceEvent = events.find(
+    (event) => isRecord(event) && event.type === "data-search-references",
+  );
+  const references =
+    isRecord(referenceEvent) &&
+    isRecord(referenceEvent.data) &&
+    Array.isArray(referenceEvent.data.references)
+      ? referenceEvent.data.references
+      : [];
+
   return {
-    text: "",
-    reasoning: "",
-    references: [],
-    referenceChunks: [],
-    tasks: [],
-    searchSteps: [],
-    event_counts: {},
-    ...(includeEvents ? { raw_events: [] } : {}),
+    answer: text,
+    text,
+    message_id: isRecord(start) ? start.message_id : undefined,
+    request_id: isRecord(metadata) ? metadata.request_id : undefined,
+    trace_id: isRecord(metadata) ? metadata.trace_id : undefined,
+    references,
+    events,
   };
 }
 
-function processBufferedLines(
-  buffer: string,
-  state: SseAggregate,
-  endpoint: LinerEndpoint,
-) {
-  let start = 0;
-  let index = buffer.indexOf("\n", start);
-  let done = false;
+function normalizeToolResult(toolName: McpToolName, result: unknown) {
+  const toolResult = isRecord(result) ? (result as McpToolResult) : {};
+  if (toolResult.isError) {
+    const errorText = parseTextContent(toolResult.content).join("\n");
+    throw new Error(errorText || `${toolName} returned an error`);
+  }
 
-  while (index !== -1) {
-    const line = buffer.slice(start, index).replace(/\r$/, "");
-    if (processSseLine(line, state, endpoint)) {
-      done = true;
-      start = index + 1;
-      break;
+  const parsed = parseTextContent(toolResult.content);
+  if (parsed.length === 1) {
+    const value = parsed[0];
+    if (Array.isArray(value)) {
+      return normalizeEvents(value);
     }
-    start = index + 1;
-    index = buffer.indexOf("\n", start);
+
+    if (isRecord(value)) {
+      return {
+        ...value,
+        request_id: value.requestId ?? value.request_id,
+        total_count: value.totalCount ?? value.total_count,
+      };
+    }
+
+    return { text: String(value) };
   }
 
   return {
-    done,
-    remainder: buffer.slice(start),
+    content: parsed,
+    raw_result: result,
   };
-}
-
-function processSseLine(
-  line: string,
-  state: SseAggregate,
-  endpoint: LinerEndpoint,
-) {
-  const trimmed = line.trim();
-  if (!trimmed || trimmed.startsWith("event:")) {
-    return false;
-  }
-  if (!trimmed.startsWith("data:")) {
-    return false;
-  }
-
-  const payload = trimmed.slice("data:".length).trim();
-  if (!payload) {
-    return false;
-  }
-  if (payload === "[DONE]") {
-    return true;
-  }
-
-  const event = tryParseJson(payload) as RawSseEvent;
-  collectSseEvent(event, state, endpoint);
-  return false;
-}
-
-function collectSseEvent(
-  event: RawSseEvent,
-  state: SseAggregate,
-  endpoint: LinerEndpoint,
-) {
-  const eventType = event.type ?? "unknown";
-  state.event_counts[eventType] = (state.event_counts[eventType] ?? 0) + 1;
-  state.raw_events?.push(event);
-
-  if (eventType === "data-error") {
-    throw new Error(
-      `Liner ${endpoint} stream error: ${extractErrorMessage(
-        event,
-        JSON.stringify(event),
-        "stream error",
-      )}`.trim(),
-    );
-  }
-
-  switch (eventType) {
-    case "start":
-      if (typeof event.message_id === "string") {
-        state.message_id = event.message_id;
-      }
-      if (event.message_metadata !== undefined) {
-        state.metadata = event.message_metadata;
-      }
-      break;
-    case "data-metadata":
-      state.metadata = getEventData(event) ?? event;
-      break;
-    case "text-delta":
-      if (typeof event.delta === "string") {
-        state.text += event.delta;
-      }
-      break;
-    case "reasoning-delta":
-      if (typeof event.delta === "string") {
-        state.reasoning += event.delta;
-      }
-      break;
-    case "data-search-references":
-      appendArray(state.references, getNestedArray(event, "references"));
-      break;
-    case "data-search-chunks":
-      appendArray(state.referenceChunks, getNestedArray(event, "referenceChunks"));
-      break;
-    case "data-search-tasks":
-      state.tasks = mergeTasks(state.tasks, getNestedArray(event, "tasks"));
-      break;
-    case "data-search-step":
-      state.searchSteps.push(getEventData(event) ?? event);
-      break;
-  }
-}
-
-function getEventData(event: RawSseEvent) {
-  if (
-    event.data !== null &&
-    typeof event.data === "object" &&
-    event.data !== undefined
-  ) {
-    return event.data as Record<string, unknown>;
-  }
-  return undefined;
-}
-
-function getNestedArray(event: RawSseEvent, field: string) {
-  const data = getEventData(event);
-  const value = data?.[field];
-  return Array.isArray(value) ? value : [];
-}
-
-function appendArray(target: unknown[], items: unknown[]) {
-  target.push(...items);
-}
-
-function mergeTasks(existing: unknown[], updates: unknown[]) {
-  if (updates.length === 0) {
-    return existing;
-  }
-  const byId = new Map<string, unknown>();
-  const withoutIds: unknown[] = [];
-
-  for (const task of existing) {
-    const id = taskId(task);
-    if (id) {
-      byId.set(id, task);
-    } else {
-      withoutIds.push(task);
-    }
-  }
-  for (const task of updates) {
-    const id = taskId(task);
-    if (id) {
-      byId.set(id, task);
-    } else {
-      withoutIds.push(task);
-    }
-  }
-
-  return [...withoutIds, ...byId.values()];
-}
-
-function taskId(task: unknown) {
-  if (task !== null && typeof task === "object" && "id" in task) {
-    const value = (task as { id?: unknown }).id;
-    return typeof value === "string" ? value : undefined;
-  }
-  return undefined;
 }
 
 function tryParseJson(text: string): unknown {
   try {
     return JSON.parse(text);
   } catch {
-    throw new Error("Liner returned a non-JSON response.");
+    throw new Error("Liner MCP returned a non-JSON response.");
   }
 }
 
@@ -504,92 +253,64 @@ function extractErrorMessage(
   return rawText.slice(0, 300) || fallback;
 }
 
-function getApiKey() {
-  const apiKey = env.LINER_API_KEY;
-  if (!apiKey) {
-    throw new Error("Missing LINER_API_KEY for the Liner component.");
-  }
-  return apiKey;
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object";
 }
 
-export const webSearch = action({
-  args: webSearchArgsValidator,
-  returns: searchReturnValidator,
+function getAccessToken() {
+  const accessToken = env.LINER_MCP_ACCESS_TOKEN;
+  if (!accessToken) {
+    throw new Error("Missing LINER_MCP_ACCESS_TOKEN for the Liner component.");
+  }
+  return accessToken;
+}
+
+export const searchWeb = action({
+  args: searchArgsValidator,
+  returns: v.any(),
   handler: async (_ctx, args) => {
-    return (await callLinerJson(
-      "/search/web",
-      buildSearchBody(args as WebSearchArgs),
-    )) as SearchReturn;
+    return await callMcpTool("search_web", args as SearchArgs);
   },
 });
 
-export const scholarSearch = action({
-  args: scholarSearchArgsValidator,
-  returns: searchReturnValidator,
+export const searchScholar = action({
+  args: searchArgsValidator,
+  returns: v.any(),
   handler: async (_ctx, args) => {
-    return (await callLinerJson(
-      "/search/scholar",
-      buildSearchBody(args as ScholarSearchArgs),
-    )) as SearchReturn;
+    return await callMcpTool("search_scholar", args as SearchArgs);
   },
 });
 
-export const quickAnswer = action({
-  args: baseSseArgsValidator,
-  returns: sseReturnValidator,
+export const quickAnswerAgent = action({
+  args: agentArgsValidator,
+  returns: v.any(),
   handler: async (_ctx, args) => {
-    return (await callLinerSse("/quick-answer", args)) as SseReturn;
+    return await callMcpTool("quick_answer_agent", args as AgentArgs);
   },
 });
 
-export const aiSearch = action({
-  args: aiSearchArgsValidator,
-  returns: sseReturnValidator,
+export const searchAgent = action({
+  args: agentArgsValidator,
+  returns: v.any(),
   handler: async (_ctx, args) => {
-    return (await callLinerSse("/ai-search", args as AiSearchArgs)) as SseReturn;
+    return await callMcpTool("search_agent", args as AgentArgs);
   },
 });
 
-export const aiSearchPro = action({
-  args: aiSearchArgsValidator,
-  returns: sseReturnValidator,
+export const deepResearchAgent = action({
+  args: agentArgsValidator,
+  returns: v.any(),
   handler: async (_ctx, args) => {
-    return (await callLinerSse(
-      "/ai-search-pro",
-      args as AiSearchArgs,
-    )) as SseReturn;
-  },
-});
-
-export const deepResearch = action({
-  args: deepResearchArgsValidator,
-  returns: sseReturnValidator,
-  handler: async (_ctx, args) => {
-    return (await callLinerSse(
-      "/deep-research",
-      args as DeepResearchArgs,
-    )) as SseReturn;
-  },
-});
-
-export const deepResearchPro = action({
-  args: deepResearchArgsValidator,
-  returns: sseReturnValidator,
-  handler: async (_ctx, args) => {
-    return (await callLinerSse(
-      "/deep-research-pro",
-      args as DeepResearchArgs,
-    )) as SseReturn;
+    return await callMcpTool("deep_research_agent", args as AgentArgs);
   },
 });
 
 export const _test = {
-  buildJsonHeaders,
-  buildSearchBody,
-  buildSseBody,
-  buildSseHeaders,
-  collectSseEvent,
+  buildMcpHeaders,
+  buildToolCallBody,
   extractErrorMessage,
-  parseSseText,
+  normalizeToolResult,
+  parseMcpEnvelope,
+  parseMcpSseEnvelope,
   tryParseJson,
 };

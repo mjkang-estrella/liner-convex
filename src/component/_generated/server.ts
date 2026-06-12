@@ -34,7 +34,7 @@ import type { DataModel } from "./dataModel.js";
  * Typesafe environment variables declared in `convex.config.ts`.
  */
 type Env = {
-  readonly LINER_API_KEY: string;
+  readonly LINER_MCP_ACCESS_TOKEN: string;
 };
 
 export const query: QueryBuilder<DataModel, "public"> = queryGeneric;
@@ -54,4 +54,3 @@ export type MutationCtx = GenericMutationCtx<DataModel>;
 export type ActionCtx = GenericActionCtx<DataModel>;
 export type DatabaseReader = GenericDatabaseReader<DataModel>;
 export type DatabaseWriter = GenericDatabaseWriter<DataModel>;
-

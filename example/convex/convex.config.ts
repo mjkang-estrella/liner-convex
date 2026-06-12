@@ -4,14 +4,14 @@ import liner from "liner-convex/convex.config";
 
 const app = defineApp({
   env: {
-    LINER_API_KEY: v.string(),
+    LINER_MCP_ACCESS_TOKEN: v.string(),
   },
 });
 
 app.use(liner, {
   name: "liner",
   env: {
-    LINER_API_KEY: app.env.LINER_API_KEY,
+    LINER_MCP_ACCESS_TOKEN: app.env.LINER_MCP_ACCESS_TOKEN,
   },
 });
 

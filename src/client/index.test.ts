@@ -3,62 +3,47 @@ import { LinerClient } from "./index.js";
 import { components } from "./setup.test.js";
 
 describe("LinerClient", () => {
-  test("webSearch delegates to the web search action", async () => {
+  test("search methods delegate to the MCP search actions", async () => {
     const client = new LinerClient(components.liner);
     const runAction = vi.fn().mockResolvedValue({ results: [] });
 
-    await client.webSearch({ runAction }, { query: "recent ai regulation" });
-
-    expect(runAction).toHaveBeenCalledWith(components.liner.lib.webSearch, {
-      query: "recent ai regulation",
-    });
-  });
-
-  test("scholarSearch delegates to the scholar search action", async () => {
-    const client = new LinerClient(components.liner);
-    const runAction = vi.fn().mockResolvedValue({ results: [] });
-
-    await client.scholarSearch(
+    await client.searchWeb({ runAction }, { query: "recent ai regulation" });
+    await client.searchScholar(
       { runAction },
-      { query: "retrieval augmented generation", max_results: 5 },
+      { query: "retrieval augmented generation", limit: 5 },
     );
 
-    expect(runAction).toHaveBeenCalledWith(components.liner.lib.scholarSearch, {
+    expect(runAction).toHaveBeenCalledWith(components.liner.lib.searchWeb, {
+      query: "recent ai regulation",
+    });
+    expect(runAction).toHaveBeenCalledWith(components.liner.lib.searchScholar, {
       query: "retrieval augmented generation",
-      max_results: 5,
+      limit: 5,
     });
   });
 
-  test("answer methods delegate to their component actions", async () => {
+  test("agent methods delegate to the MCP agent actions", async () => {
     const client = new LinerClient(components.liner);
-    const runAction = vi.fn().mockResolvedValue({ text: "", event_counts: {} });
+    const runAction = vi.fn().mockResolvedValue({ text: "" });
     const args = {
       messages: [{ role: "user" as const, content: "What is Convex?" }],
     };
 
-    await client.quickAnswer({ runAction }, args);
-    await client.aiSearch({ runAction }, args);
-    await client.aiSearchPro({ runAction }, args);
-    await client.deepResearch({ runAction }, args);
-    await client.deepResearchPro({ runAction }, args);
+    await client.quickAnswerAgent({ runAction }, args);
+    await client.searchAgent({ runAction }, args);
+    await client.deepResearchAgent({ runAction }, args);
 
     expect(runAction).toHaveBeenCalledWith(
-      components.liner.lib.quickAnswer,
-      args,
-    );
-    expect(runAction).toHaveBeenCalledWith(components.liner.lib.aiSearch, args);
-    expect(runAction).toHaveBeenCalledWith(
-      components.liner.lib.aiSearchPro,
+      components.liner.lib.quickAnswerAgent,
       args,
     );
     expect(runAction).toHaveBeenCalledWith(
-      components.liner.lib.deepResearch,
+      components.liner.lib.searchAgent,
       args,
     );
     expect(runAction).toHaveBeenCalledWith(
-      components.liner.lib.deepResearchPro,
+      components.liner.lib.deepResearchAgent,
       args,
     );
   });
 });
-

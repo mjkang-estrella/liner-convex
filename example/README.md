@@ -1,4 +1,4 @@
-# convex-liner example
+# liner-convex example
 
 Complete example showing how to use `liner-convex` from a Convex app.
 
@@ -6,8 +6,9 @@ Complete example showing how to use `liner-convex` from a Convex app.
 
 Before running this example, you will need:
 
-1. A [Liner](https://liner.com/developers) account and API key
-2. A [Convex](https://convex.dev) account
+1. A [Liner](https://liner.com/developers) account with MCP OAuth access
+2. A Liner OAuth access token with scope `mcp`
+3. A [Convex](https://convex.dev) account
 
 ## Setup
 
@@ -29,14 +30,16 @@ npx convex dev
 In the Convex dashboard, add:
 
 ```bash
-LINER_API_KEY=your_liner_api_key
+LINER_MCP_ACCESS_TOKEN=your_oauth_access_token
 ```
 
 You can also set it from the CLI:
 
 ```bash
-npx convex env set LINER_API_KEY your_liner_api_key
+npx convex env set LINER_MCP_ACCESS_TOKEN your_oauth_access_token
 ```
+
+Do not use a Liner API key. Liner MCP now requires OAuth.
 
 ### 4. Run the examples
 
@@ -45,62 +48,41 @@ With `npx convex dev` still running, open another terminal and run:
 **Web search**
 
 ```bash
-npx convex run example:webSearch '{
+npx convex run example:searchWeb '{
   "query": "recent AI regulation updates",
-  "country_code": "us",
-  "lang": "en",
-  "date_range": "past_week",
-  "max_results": 10
+  "limit": 10
 }'
 ```
 
 **Scholar search**
 
 ```bash
-npx convex run example:scholarSearch '{
+npx convex run example:searchScholar '{
   "query": "retrieval augmented generation evaluation",
-  "lang": "en",
-  "max_results": 5
+  "limit": 5
 }'
 ```
 
-**Quick answer**
+**Quick Answer Agent**
 
 ```bash
-npx convex run example:quickAnswer '{
+npx convex run example:quickAnswerAgent '{
   "question": "What is the capital of France?"
 }'
 ```
 
-**AI Search**
+**Search Agent**
 
 ```bash
-npx convex run example:aiSearch '{
-  "question": "What are the latest developments in quantum computing?",
-  "mode": "general"
+npx convex run example:searchAgent '{
+  "question": "Compare Liner, Exa, and Tavily for developer-facing search APIs"
 }'
 ```
 
-**AI Search Pro**
+**Deep Research Agent**
 
 ```bash
-npx convex run example:aiSearchPro '{
-  "question": "Compare recent frontier AI model launches"
-}'
-```
-
-**Deep Research**
-
-```bash
-npx convex run example:deepResearch '{
-  "question": "Compare the effectiveness of mRNA vs protein subunit COVID vaccines"
-}'
-```
-
-**Deep Research Pro**
-
-```bash
-npx convex run example:deepResearchPro '{
+npx convex run example:deepResearchAgent '{
   "question": "Write a cited research brief on AI search API price and accuracy tradeoffs"
 }'
 ```

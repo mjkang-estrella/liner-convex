@@ -1,6 +1,14 @@
 # Liner Convex
 
-Use Liner's search, quick answer, AI Search, and Deep Research APIs from Convex actions with your API key kept in Convex env.
+Use Liner's OAuth-backed MCP tools from Convex actions.
+
+This component calls Liner's remote Streamable HTTP MCP server from Convex and exposes the current Liner MCP tool surface:
+
+- `search_web`
+- `search_scholar`
+- `quick_answer_agent`
+- `search_agent`
+- `deep_research_agent`
 
 ## Quick Start
 
@@ -21,14 +29,14 @@ import liner from "liner-convex/convex.config";
 
 const app = defineApp({
   env: {
-    LINER_API_KEY: v.string(),
+    LINER_MCP_ACCESS_TOKEN: v.string(),
   },
 });
 
 app.use(liner, {
   name: "liner",
   env: {
-    LINER_API_KEY: app.env.LINER_API_KEY,
+    LINER_MCP_ACCESS_TOKEN: app.env.LINER_MCP_ACCESS_TOKEN,
   },
 });
 
@@ -37,17 +45,19 @@ export default app;
 
 ### 3. Set Up Environment Variables
 
-Add this to your Convex Dashboard -> Settings -> Environment Variables:
+Liner MCP now authenticates with OAuth. Store an OAuth access token that has the `mcp` scope in Convex environment configuration:
 
 | Variable | Description |
 | --- | --- |
-| `LINER_API_KEY` | Your Liner API key |
+| `LINER_MCP_ACCESS_TOKEN` | OAuth access token for Liner MCP with scope `mcp` |
 
-You can also set it from the CLI:
+You can set it from the CLI:
 
 ```bash
-npx convex env set LINER_API_KEY <your-key>
+npx convex env set LINER_MCP_ACCESS_TOKEN <oauth-access-token>
 ```
+
+Do not store a Liner API key here. Static API-key authentication is no longer supported for the Liner MCP server.
 
 ### 4. Use the Component
 
@@ -60,40 +70,35 @@ const liner = new LinerClient(components.liner);
 
 export const searchNews = action({
   handler: async (ctx) => {
-    return await liner.webSearch(ctx, {
+    return await liner.searchWeb(ctx, {
       query: "recent AI regulation updates",
-      country_code: "us",
-      lang: "en",
-      date_range: "past_week",
-      max_results: 10,
+      limit: 10,
     });
   },
 });
 
 export const answerWithSources = action({
   handler: async (ctx) => {
-    return await liner.aiSearch(ctx, {
+    return await liner.searchAgent(ctx, {
       messages: [
         {
           role: "user",
           content: "What are the latest developments in quantum computing?",
         },
       ],
-      mode: "general",
     });
   },
 });
 
 export const researchBrief = action({
   handler: async (ctx) => {
-    return await liner.deepResearchPro(ctx, {
+    return await liner.deepResearchAgent(ctx, {
       messages: [
         {
           role: "user",
           content: "Compare recent frontier AI model launches.",
         },
       ],
-      lang: "en",
     });
   },
 });
@@ -101,126 +106,106 @@ export const researchBrief = action({
 
 ## API Reference
 
-### `webSearch(ctx, args)`
+### `searchWeb(ctx, args)`
 
-Call Liner Web Search (`/v1/search/web`) for structured web results.
+Call Liner MCP tool `search_web` for structured web results.
 
 ```typescript
-await liner.webSearch(ctx, {
+await liner.searchWeb(ctx, {
   query: "recent AI regulation updates",
-  country_code: "us",
-  lang: "en",
-  date_range: "past_week",
-  max_results: 10,
+  limit: 10,
 });
 ```
 
 Parameters:
 
 - `query` - Search query string.
-- `country_code` - Optional ISO 3166-1 alpha-2 country code.
-- `lang` - Optional language code such as `en`, `ko`, or `ja`.
-- `date_range` - Optional `past_day`, `past_week`, `past_month`, or `past_year`.
-- `max_results` - Optional result count, up to 20.
-- `request_id` - Optional client-supplied ID echoed by Liner.
+- `limit` - Optional maximum result count.
 
-### `scholarSearch(ctx, args)`
+### `searchScholar(ctx, args)`
 
-Call Liner Scholar Search (`/v1/search/scholar`) for academic results.
+Call Liner MCP tool `search_scholar` for academic results.
 
 ```typescript
-await liner.scholarSearch(ctx, {
+await liner.searchScholar(ctx, {
   query: "retrieval augmented generation evaluation",
-  lang: "en",
-  max_results: 5,
+  limit: 5,
 });
 ```
 
-Scholar results can include academic metadata such as `citation_count`, `authors`, and `journal`.
+### `quickAnswerAgent(ctx, args)`
 
-### `quickAnswer(ctx, args)`
-
-Call Liner Quick Answer (`/v1/quick-answer`) for a short streamed answer with citations.
+Call Liner MCP tool `quick_answer_agent` for a short source-backed factual answer.
 
 ```typescript
-await liner.quickAnswer(ctx, {
+await liner.quickAnswerAgent(ctx, {
   messages: [{ role: "user", content: "What is the capital of France?" }],
 });
 ```
 
-### `aiSearch(ctx, args)` and `aiSearchPro(ctx, args)`
+### `searchAgent(ctx, args)`
 
-Call Liner AI Search (`/v1/ai-search`) or AI Search Pro (`/v1/ai-search-pro`) for grounded answers with sources.
+Call Liner MCP tool `search_agent` for a source-backed synthesized answer with citations.
 
 ```typescript
-await liner.aiSearch(ctx, {
+await liner.searchAgent(ctx, {
   messages: [{ role: "user", content: "Summarize today's chip export news." }],
-  lang: "en",
-  mode: "general",
 });
 ```
 
-Parameters:
+### `deepResearchAgent(ctx, args)`
 
-- `messages` - Conversation history. The final message must be a user message.
-- `model` - Optional model identifier. `null` selects Liner's default.
-- `lang` - Optional language code.
-- `mode` - Optional `general` or `scholar`.
-- `request_id` - Optional client-supplied ID echoed by Liner.
-- `include_events` - Optional boolean. When true, the aggregate response includes `raw_events`.
-
-### `deepResearch(ctx, args)` and `deepResearchPro(ctx, args)`
-
-Call Liner Deep Research (`/v1/deep-research`) or Deep Research Pro (`/v1/deep-research-pro`) for long-form citation-rich reports.
+Call Liner MCP tool `deep_research_agent` for multi-step citation-rich research.
 
 ```typescript
-await liner.deepResearch(ctx, {
+await liner.deepResearchAgent(ctx, {
   messages: [
     {
       role: "user",
       content: "Compare the effectiveness of mRNA vs protein subunit vaccines.",
     },
   ],
-  lang: "en",
 });
 ```
 
-## SSE Aggregation
+## MCP Result Normalization
 
-Liner's Quick Answer, AI Search, and Deep Research APIs stream Server-Sent Events. This component parses the stream inside a Convex action and returns:
+The component sends JSON-RPC `tools/call` requests to:
+
+```text
+https://platform.liner.com/api/v1/mcp
+```
+
+MCP text content is parsed as JSON when possible. Search results are returned with both original MCP fields and normalized `request_id` / `total_count` aliases. Agent event arrays are aggregated into:
 
 ```typescript
 {
+  answer: string;
   text: string;
-  reasoning: string;
+  message_id?: unknown;
+  request_id?: unknown;
+  trace_id?: unknown;
   references: unknown[];
-  referenceChunks: unknown[];
-  tasks: unknown[];
-  searchSteps: unknown[];
-  metadata?: unknown;
-  message_id?: string;
-  event_counts: Record<string, number>;
-  raw_events?: unknown[];
+  events: unknown[];
 }
 ```
 
-Use `include_events: true` when debugging or when you need direct access to Liner's raw SSE envelopes.
-
 ## Requirements
 
-- Liner account and API key
+- Liner account with OAuth access to MCP
+- OAuth access token with `mcp` scope
 - Convex 1.39.1 or later
 
 ## How It Works
 
-This component wraps Liner API calls inside a Convex component. Your actions call `LinerClient`, which runs component actions that:
+This component wraps Liner MCP calls inside a Convex component. Your actions call `LinerClient`, which runs component actions that:
 
-1. Read `LINER_API_KEY` from component environment configuration.
-2. Call Liner JSON or SSE endpoints with your arguments.
-3. Parse streaming responses into typed aggregate results.
-4. Return results to your Convex action.
+1. Read `LINER_MCP_ACCESS_TOKEN` from component environment configuration.
+2. Call Liner's MCP `tools/call` method over Streamable HTTP.
+3. Normalize MCP tool text content into JavaScript objects.
+4. Return results to the calling action.
 
-The API key stays in Convex env, not in client-visible code.
+The OAuth access token stays in Convex env, not in client-visible code.
 
 ## Development
 

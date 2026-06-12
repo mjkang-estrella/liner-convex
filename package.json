@@ -1,7 +1,7 @@
 {
   "name": "liner-convex",
-  "version": "0.1.1",
-  "description": "Convex component for Liner search, quick answers, AI Search, and Deep Research",
+  "version": "0.2.0",
+  "description": "Convex component for Liner OAuth MCP search and research tools",
   "type": "module",
   "main": "./dist/client/index.js",
   "types": "./dist/client/index.d.ts",
